@@ -39,6 +39,15 @@ if [[ "$1" == */yb_typedefs.list ]]; then
       echo "error:missing_Form:$form is missing for $formdata"
     fi
   done
+  
+  find src -name '*.h' -exec grep -l 'YB_DEFINE_HANDLE_TYPE' {} \; 2>/dev/null | \
+    xargs grep -ho 'YB_DEFINE_HANDLE_TYPE([A-Z][a-zA-Z0-9_]*)' 2>/dev/null | \
+    sed 's/YB_DEFINE_HANDLE_TYPE(//' | sed 's/)//' | sort -u | while read -r handle_type; do
+      transformed_type="Ybc${handle_type}"
+      if ! grep -q "^$transformed_type$" "$1"; then
+        echo "error:missing_handle_type:$transformed_type is missing for YB_DEFINE_HANDLE_TYPE($handle_type)"
+      fi
+    done
 else
   grep -En "$pattern" "$1" \
     | sed 's/^/error:bad_yb_in_type_name:'\
